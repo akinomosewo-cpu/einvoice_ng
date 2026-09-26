@@ -3,9 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gap/gap.dart';
 
+import '../../core/routing/page_transitions.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/auth_service.dart';
 import '../../domain/entities/invoice.dart';
 import '../blocs/app_bloc.dart';
+import 'auth/login_page.dart';
 import 'business_profile_page.dart';
 import 'customers_page.dart';
 import 'invoice_detail_page.dart';
@@ -56,15 +59,29 @@ class _HomePageState extends State<HomePage> {
                     IconButton(
                       tooltip: 'Business profile',
                       icon: const Icon(Icons.storefront_outlined, color: AppColors.textSecondary),
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const BusinessProfilePage()),
-                      ),
+                      onPressed: () => pushFadeSlide(context, (_) => const BusinessProfilePage()),
                     ),
                     IconButton(
                       tooltip: 'New invoice',
                       icon: const Icon(Icons.add_rounded, color: AppColors.primary),
                       onPressed: () => _newInvoice(context),
+                    ),
+                    PopupMenuButton<String>(
+                      tooltip: 'Account',
+                      icon: const Icon(Icons.more_vert_rounded, color: AppColors.textSecondary),
+                      onSelected: (value) {
+                        if (value == 'logout') _logout(context);
+                      },
+                      itemBuilder: (context) => const [
+                        PopupMenuItem(
+                          value: 'logout',
+                          child: Row(children: [
+                            Icon(Icons.logout_rounded, color: AppColors.danger, size: 18),
+                            Gap(10),
+                            Text('Log out'),
+                          ]),
+                        ),
+                      ],
                     ),
                     const Gap(4),
                   ],
@@ -74,10 +91,7 @@ class _HomePageState extends State<HomePage> {
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       if (!state.profile.isComplete)
-                        _ProfileNudge(onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const BusinessProfilePage()),
-                        )),
+                        _ProfileNudge(onTap: () => pushFadeSlide(context, (_) => const BusinessProfilePage())),
                       const Gap(12),
                       Row(children: [
                         _StatCard(label: 'Invoices', value: state.invoices.length.toString(), color: AppColors.primary)
@@ -102,21 +116,21 @@ class _HomePageState extends State<HomePage> {
                         icon: Icons.people_outline_rounded,
                         label: 'Customers (${state.customers.length})',
                         color: AppColors.primary,
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomersPage())),
+                        onTap: () => pushFadeSlide(context, (_) => const CustomersPage()),
                       ).animate(delay: 200.ms).fadeIn().slideX(begin: -0.1),
                       const Gap(8),
                       _FeatureCard(
                         icon: Icons.inventory_2_outlined,
                         label: 'Products & Services (${state.products.length})',
                         color: AppColors.success,
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProductsPage())),
+                        onTap: () => pushFadeSlide(context, (_) => const ProductsPage()),
                       ).animate(delay: 250.ms).fadeIn().slideX(begin: -0.1),
                       const Gap(8),
                       _FeatureCard(
                         icon: Icons.workspace_premium_outlined,
                         label: 'Subscription plan',
                         color: AppColors.warning,
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionPage())),
+                        onTap: () => pushFadeSlide(context, (_) => const SubscriptionPage()),
                       ).animate(delay: 300.ms).fadeIn().slideX(begin: -0.1),
                       const Gap(24),
                       Text('Invoice History', style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary)),
@@ -142,10 +156,7 @@ class _HomePageState extends State<HomePage> {
                             padding: const EdgeInsets.only(bottom: 8),
                             child: _InvoiceTile(
                               invoice: e.value,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => InvoiceDetailPage(invoiceId: e.value.id)),
-                              ),
+                              onTap: () => pushFadeSlide(context, (_) => InvoiceDetailPage(invoiceId: e.value.id)),
                               onDelete: () => context.read<AppBloc>().add(InvoiceDeleted(e.value.id)),
                             ).animate(delay: Duration(milliseconds: 50 * e.key)).fadeIn(),
                           )),
@@ -167,10 +178,18 @@ class _HomePageState extends State<HomePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Set up your business profile (name & TIN) before creating invoices.')),
       );
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const BusinessProfilePage()));
+      pushFadeSlide(context, (_) => const BusinessProfilePage());
       return;
     }
-    Navigator.push(context, MaterialPageRoute(builder: (_) => BlocProvider.value(value: bloc, child: const InvoiceFormPage())));
+    pushFadeSlide(context, (_) => BlocProvider.value(value: bloc, child: const InvoiceFormPage()));
+  }
+
+  Future<void> _logout(BuildContext context) async {
+    final authService = AuthService();
+    await authService.init();
+    await authService.logout();
+    if (!context.mounted) return;
+    pushReplacementFadeSlide(context, (_) => LoginPage(authService: authService));
   }
 }
 

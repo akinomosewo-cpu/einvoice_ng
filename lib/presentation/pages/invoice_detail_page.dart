@@ -8,6 +8,7 @@ import '../../core/theme/app_theme.dart';
 import '../../domain/entities/invoice.dart';
 import '../../domain/services/invoice_pdf_service.dart';
 import '../blocs/app_bloc.dart';
+import '../widgets/success_check.dart';
 
 class InvoiceDetailPage extends StatelessWidget {
   final String invoiceId;
@@ -50,7 +51,11 @@ class InvoiceDetailPage extends StatelessWidget {
                       style: AppTextStyles.labelSmall.copyWith(color: statusColor, fontWeight: FontWeight.w700),
                       items: InvoiceStatus.values.map((s) => DropdownMenuItem(value: s, child: Text(s.name))).toList(),
                       onChanged: (s) {
-                        if (s != null) context.read<AppBloc>().add(InvoiceStatusUpdated(invoice.id, s));
+                        if (s == null) return;
+                        context.read<AppBloc>().add(InvoiceStatusUpdated(invoice.id, s));
+                        if (s == InvoiceStatus.paid) {
+                          showSuccessOverlay(context, message: 'Marked as paid');
+                        }
                       },
                     ),
                   ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
@@ -8,6 +10,7 @@ import '../../domain/entities/customer.dart';
 import '../../domain/entities/invoice.dart';
 import '../../domain/entities/product.dart';
 import '../blocs/app_bloc.dart';
+import '../widgets/success_check.dart';
 
 /// Invoice creation form covering the fields a government-approved e-invoice
 /// layout requires: seller/buyer TIN & address, sequential invoice number,
@@ -201,6 +204,7 @@ class _InvoiceFormPageState extends State<InvoiceFormPage> {
       status: InvoiceStatus.draft,
     );
     bloc.add(InvoiceCreated(invoice));
+    unawaited(showSuccessOverlay(context, message: 'Invoice created'));
     Navigator.pop(context);
   }
 }

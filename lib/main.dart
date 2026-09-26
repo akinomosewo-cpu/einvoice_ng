@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/blocs/app_bloc.dart';
-import 'presentation/pages/home_page.dart';
+import 'presentation/pages/auth/splash_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +29,7 @@ class EInvoiceApp extends StatelessWidget {
         theme: AppTheme.light,
         darkTheme: AppTheme.light,
         themeMode: ThemeMode.light,
-        home: const HomePage(),
+        home: const SplashPage(),
       ),
     );
   }
