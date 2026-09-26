@@ -2,12 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gap/gap.dart';
+
 import '../../core/theme/app_theme.dart';
+import '../../domain/entities/invoice.dart';
 import '../blocs/app_bloc.dart';
+import 'business_profile_page.dart';
+import 'customers_page.dart';
+import 'invoice_detail_page.dart';
+import 'invoice_form_page.dart';
+import 'products_page.dart';
+import 'subscription_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
-  @override State<HomePage> createState() => _HomePageState();
+  @override
+  State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
@@ -24,14 +33,19 @@ class _HomePageState extends State<HomePage> {
       body: SafeArea(
         child: BlocBuilder<AppBloc, AppState>(
           builder: (context, state) {
+            if (state.loading) {
+              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+            }
             return CustomScrollView(
               slivers: [
                 SliverAppBar(
-                  floating: true, snap: true,
+                  floating: true,
+                  snap: true,
                   backgroundColor: AppColors.background,
                   title: Row(children: [
                     Container(
-                      width: 32, height: 32,
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(8)),
                       child: const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 17),
                     ),
@@ -39,56 +53,100 @@ class _HomePageState extends State<HomePage> {
                     Text('E-Invoice NG', style: AppTextStyles.headlineMedium.copyWith(color: AppColors.textPrimary)),
                   ]),
                   actions: [
-                    IconButton(icon: const Icon(Icons.add_rounded, color: AppColors.primary), onPressed: () => _showAddSheet(context)),
+                    IconButton(
+                      tooltip: 'Business profile',
+                      icon: const Icon(Icons.storefront_outlined, color: AppColors.textSecondary),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const BusinessProfilePage()),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'New invoice',
+                      icon: const Icon(Icons.add_rounded, color: AppColors.primary),
+                      onPressed: () => _newInvoice(context),
+                    ),
                     const Gap(4),
                   ],
                 ),
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  sliver: SliverList(delegate: SliverChildListDelegate([
-                    const Gap(8),
-                    Row(children: [
-                      _StatCard(label: 'Invoices', value: state is AppLoaded ? state.items.length.toString() : '0', color: AppColors.primary).animate(delay: 50.ms).fadeIn().slideY(begin: 0.1),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      if (!state.profile.isComplete)
+                        _ProfileNudge(onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const BusinessProfilePage()),
+                        )),
+                      const Gap(8),
+                      Row(children: [
+                        _StatCard(label: 'Invoices', value: state.invoices.length.toString(), color: AppColors.primary)
+                            .animate(delay: 50.ms)
+                            .fadeIn()
+                            .slideY(begin: 0.1),
+                        const Gap(12),
+                        _StatCard(label: 'Paid', value: '₦${state.totalRevenue.toStringAsFixed(0)}', color: AppColors.success)
+                            .animate(delay: 100.ms)
+                            .fadeIn()
+                            .slideY(begin: 0.1),
+                        const Gap(12),
+                        _StatCard(label: 'VAT Collected', value: '₦${state.totalVatCollected.toStringAsFixed(0)}', color: AppColors.warning)
+                            .animate(delay: 150.ms)
+                            .fadeIn()
+                            .slideY(begin: 0.1),
+                      ]),
+                      const Gap(24),
+                      Text('Manage', style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary)),
                       const Gap(12),
-                      _StatCard(label: 'Paid', value: state is AppLoaded ? state.items.where((i) => i['status'] == 'active').length.toString() : '0', color: AppColors.success).animate(delay: 100.ms).fadeIn().slideY(begin: 0.1),
+                      _FeatureCard(
+                        icon: Icons.people_outline_rounded,
+                        label: 'Customers (${state.customers.length})',
+                        color: AppColors.primary,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomersPage())),
+                      ).animate(delay: 200.ms).fadeIn().slideX(begin: -0.1),
+                      const Gap(8),
+                      _FeatureCard(
+                        icon: Icons.inventory_2_outlined,
+                        label: 'Products & Services (${state.products.length})',
+                        color: AppColors.success,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProductsPage())),
+                      ).animate(delay: 250.ms).fadeIn().slideX(begin: -0.1),
+                      const Gap(8),
+                      _FeatureCard(
+                        icon: Icons.workspace_premium_outlined,
+                        label: 'Subscription plan',
+                        color: AppColors.warning,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionPage())),
+                      ).animate(delay: 300.ms).fadeIn().slideX(begin: -0.1),
+                      const Gap(24),
+                      Text('Invoice History', style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary)),
                       const Gap(12),
-                      _StatCard(label: 'Pending', value: state is AppLoaded ? state.items.where((i) => i['status'] == 'pending').length.toString() : '0', color: AppColors.warning).animate(delay: 150.ms).fadeIn().slideY(begin: 0.1),
+                      if (state.invoices.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(32),
+                          decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.border)),
+                          child: Column(children: [
+                            const Icon(Icons.receipt_long_rounded, color: AppColors.textTertiary, size: 40),
+                            const Gap(12),
+                            Text('No invoices yet', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+                            const Gap(4),
+                            Text('Tap + to create your first invoice', style: AppTextStyles.labelMedium.copyWith(color: AppColors.textTertiary)),
+                          ]),
+                        ).animate().fadeIn(delay: 350.ms),
+                      ...state.invoices.asMap().entries.map((e) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _InvoiceTile(
+                              invoice: e.value,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => InvoiceDetailPage(invoiceId: e.value.id)),
+                              ),
+                              onDelete: () => context.read<AppBloc>().add(InvoiceDeleted(e.value.id)),
+                            ).animate(delay: Duration(milliseconds: 50 * e.key)).fadeIn(),
+                          )),
+                      const Gap(32),
                     ]),
-                    const Gap(24),
-                    Text('What you can do', style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary)),
-                    const Gap(12),
-                    _FeatureCard(icon: Icons.check_circle_outline_rounded, label: 'Create NRS-compliant invoices', color: AppColors.primary).animate(delay: 200.ms).fadeIn().slideX(begin: -0.1),
-                    const Gap(8),
-                    _FeatureCard(icon: Icons.bar_chart_rounded, label: 'Track payments and VAT', color: AppColors.success).animate(delay: 250.ms).fadeIn().slideX(begin: -0.1),
-                    const Gap(8),
-                    _FeatureCard(icon: Icons.send_rounded, label: 'Send validated invoices', color: AppColors.warning).animate(delay: 300.ms).fadeIn().slideX(begin: -0.1),
-                    const Gap(24),
-                    Text('Recent Activity', style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary)),
-                    const Gap(12),
-                    if (state is AppLoaded && state.items.isEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(32),
-                        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.border)),
-                        child: Column(children: [
-                          Icon(Icons.receipt_long_rounded, color: AppColors.textTertiary, size: 40),
-                          const Gap(12),
-                          Text('Nothing here yet', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
-                          const Gap(4),
-                          Text('Tap + to get started', style: AppTextStyles.labelMedium.copyWith(color: AppColors.textTertiary)),
-                        ]),
-                      ).animate().fadeIn(delay: 350.ms),
-                    if (state is AppLoaded)
-                      ...state.items.asMap().entries.map((e) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: _ItemTile(
-                          title: e.value['title'] ?? 'Item',
-                          subtitle: e.value['subtitle'] ?? '',
-                          status: e.value['status'] ?? 'active',
-                          onDelete: () => context.read<AppBloc>().add(ItemDeleted(e.value['id'] ?? '')),
-                        ).animate(delay: Duration(milliseconds: 50 * e.key)).fadeIn(),
-                      )),
-                    const Gap(32),
-                  ])),
+                  ),
                 ),
               ],
             );
@@ -98,15 +156,47 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _showAddSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => BlocProvider.value(value: context.read<AppBloc>(), child: const _AddSheet()),
-    );
+  void _newInvoice(BuildContext context) {
+    final bloc = context.read<AppBloc>();
+    if (!bloc.state.profile.isComplete) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Set up your business profile (name & TIN) before creating invoices.')),
+      );
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const BusinessProfilePage()));
+      return;
+    }
+    Navigator.push(context, MaterialPageRoute(builder: (_) => BlocProvider.value(value: bloc, child: const InvoiceFormPage())));
   }
+}
+
+class _ProfileNudge extends StatelessWidget {
+  final VoidCallback onTap;
+  const _ProfileNudge({required this.onTap});
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.warning.withOpacity(0.4)),
+            ),
+            child: Row(children: [
+              const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 20),
+              const Gap(12),
+              Expanded(
+                child: Text('Complete your business profile to start invoicing',
+                    style: AppTextStyles.labelLarge.copyWith(color: AppColors.textPrimary)),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: AppColors.warning),
+            ]),
+          ),
+        ),
+      );
 }
 
 class _StatCard extends StatelessWidget {
@@ -115,105 +205,99 @@ class _StatCard extends StatelessWidget {
   const _StatCard({required this.label, required this.value, required this.color});
   @override
   Widget build(BuildContext context) => Expanded(
-    child: Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
-      child: Column(children: [
-        Text(value, style: AppTextStyles.displaySmall.copyWith(color: color, fontWeight: FontWeight.w800)),
-        const Gap(2),
-        Text(label, style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary), textAlign: TextAlign.center),
-      ]),
-    ),
-  );
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+          child: Column(children: [
+            Text(value, style: AppTextStyles.displaySmall.copyWith(color: color, fontWeight: FontWeight.w800), maxLines: 1, overflow: TextOverflow.ellipsis),
+            const Gap(2),
+            Text(label, style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary), textAlign: TextAlign.center),
+          ]),
+        ),
+      );
 }
 
 class _FeatureCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
-  const _FeatureCard({required this.icon, required this.label, required this.color});
+  final VoidCallback onTap;
+  const _FeatureCard({required this.icon, required this.label, required this.color, required this.onTap});
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
-    child: Row(children: [
-      Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
-        child: Icon(icon, color: color, size: 16)),
-      const Gap(14),
-      Expanded(child: Text(label, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary))),
-      const Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary, size: 18),
-    ]),
-  );
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
+          child: Row(children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
+              child: Icon(icon, color: color, size: 16),
+            ),
+            const Gap(14),
+            Expanded(child: Text(label, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary))),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary, size: 18),
+          ]),
+        ),
+      );
 }
 
-class _ItemTile extends StatelessWidget {
-  final String title, subtitle, status;
+class _InvoiceTile extends StatelessWidget {
+  final Invoice invoice;
+  final VoidCallback onTap;
   final VoidCallback onDelete;
-  const _ItemTile({required this.title, required this.subtitle, required this.status, required this.onDelete});
+  const _InvoiceTile({required this.invoice, required this.onTap, required this.onDelete});
+
+  Color _statusColor() {
+    switch (invoice.status) {
+      case InvoiceStatus.paid:
+        return AppColors.success;
+      case InvoiceStatus.sent:
+        return AppColors.warning;
+      case InvoiceStatus.validated:
+        return AppColors.primary;
+      case InvoiceStatus.draft:
+        return AppColors.textSecondary;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final statusColor = status == 'active' ? AppColors.success : status == 'pending' ? AppColors.warning : AppColors.textSecondary;
+    final statusColor = _statusColor();
     return Dismissible(
-      key: Key(title + DateTime.now().toString()),
+      key: Key(invoice.id),
       direction: DismissDirection.endToStart,
       background: Container(
-        alignment: Alignment.centerRight, padding: const EdgeInsets.only(right: 20),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
         decoration: BoxDecoration(color: AppColors.danger.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
         child: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
       ),
       onDismissed: (_) => onDelete(),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
-        child: Row(children: [
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary)),
-            if (subtitle.isNotEmpty) Text(subtitle, style: AppTextStyles.labelMedium.copyWith(color: AppColors.textSecondary)),
-          ])),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: statusColor.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
-            child: Text(status, style: AppTextStyles.labelSmall.copyWith(color: statusColor, fontWeight: FontWeight.w700)),
-          ),
-        ]),
-      ),
-    );
-  }
-}
-
-class _AddSheet extends StatefulWidget {
-  const _AddSheet();
-  @override State<_AddSheet> createState() => _AddSheetState();
-}
-
-class _AddSheetState extends State<_AddSheet> {
-  final _titleCtrl = TextEditingController();
-  final _subtitleCtrl = TextEditingController();
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
-      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Add New', style: AppTextStyles.headlineLarge.copyWith(color: AppColors.textPrimary)),
-        const Gap(20),
-        TextField(controller: _titleCtrl, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary), decoration: const InputDecoration(hintText: 'Title / Name')),
-        const Gap(12),
-        TextField(controller: _subtitleCtrl, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary), decoration: const InputDecoration(hintText: 'Details')),
-        const Gap(20),
-        ElevatedButton(
-          onPressed: () {
-            if (_titleCtrl.text.isEmpty) return;
-            context.read<AppBloc>().add(ItemAdded({
-              'id': DateTime.now().millisecondsSinceEpoch.toString(),
-              'title': _titleCtrl.text,
-              'subtitle': _subtitleCtrl.text,
-              'status': 'active',
-            }));
-            Navigator.pop(context);
-          },
-          child: const Text('Save'),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
+          child: Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(invoice.invoiceNumber, style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary)),
+                Text(invoice.buyerName, style: AppTextStyles.labelMedium.copyWith(color: AppColors.textSecondary)),
+                Text('₦${invoice.grandTotal.toStringAsFixed(2)}', style: AppTextStyles.labelMedium.copyWith(color: AppColors.textTertiary)),
+              ]),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(color: statusColor.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
+              child: Text(invoice.status.name, style: AppTextStyles.labelSmall.copyWith(color: statusColor, fontWeight: FontWeight.w700)),
+            ),
+          ]),
         ),
-      ]),
+      ),
     );
   }
 }
