@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.einvoice_ng"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
