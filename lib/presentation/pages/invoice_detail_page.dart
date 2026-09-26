@@ -24,28 +24,44 @@ class InvoiceDetailPage extends StatelessWidget {
           if (invoice == null) {
             return const Center(child: Text('Invoice not found'));
           }
+          final statusColor = AppColors.statusColor(invoice.status.name);
           return ListView(
             padding: const EdgeInsets.all(20),
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(invoice.invoiceNumber, style: AppTextStyles.displaySmall.copyWith(color: AppColors.textPrimary)),
-                  DropdownButton<InvoiceStatus>(
-                    value: invoice.status,
-                    dropdownColor: AppColors.surfaceElevated,
-                    items: InvoiceStatus.values.map((s) => DropdownMenuItem(value: s, child: Text(s.name))).toList(),
-                    onChanged: (s) {
-                      if (s != null) context.read<AppBloc>().add(InvoiceStatusUpdated(invoice.id, s));
-                    },
+                  Expanded(
+                    child: Text(invoice.invoiceNumber, style: AppTextStyles.displayMedium.copyWith(color: AppColors.textPrimary)),
+                  ),
+                  const Gap(12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: DropdownButton<InvoiceStatus>(
+                      value: invoice.status,
+                      underline: const SizedBox.shrink(),
+                      dropdownColor: AppColors.surfaceElevated,
+                      borderRadius: BorderRadius.circular(16),
+                      style: AppTextStyles.labelSmall.copyWith(color: statusColor, fontWeight: FontWeight.w700),
+                      items: InvoiceStatus.values.map((s) => DropdownMenuItem(value: s, child: Text(s.name))).toList(),
+                      onChanged: (s) {
+                        if (s != null) context.read<AppBloc>().add(InvoiceStatusUpdated(invoice.id, s));
+                      },
+                    ),
                   ),
                 ],
               ),
-              const Gap(20),
+              const Gap(24),
               Center(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                child: SoftCard(
+                  radius: 24,
+                  padding: const EdgeInsets.all(16),
+                  color: Colors.white,
                   child: QrImageView(
                     data: invoice.invoiceNumber,
                     version: QrVersions.auto,
@@ -67,25 +83,27 @@ class InvoiceDetailPage extends StatelessWidget {
               const Gap(24),
               Text('Items', style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary)),
               const Gap(12),
-              ...invoice.items.map((item) => Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
-                    child: Row(children: [
-                      Expanded(
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(item.description, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary)),
-                          Text('${item.quantity} × ₦${item.unitPrice.toStringAsFixed(2)} · VAT ${(vatRateToPercent(item.vatRate) * 100).toStringAsFixed(1)}%',
-                              style: AppTextStyles.labelMedium.copyWith(color: AppColors.textSecondary)),
-                        ]),
-                      ),
-                      Text('₦${item.lineTotalWithVat.toStringAsFixed(2)}', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary)),
-                    ]),
+              ...invoice.items.map((item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: SoftCard(
+                      radius: 18,
+                      padding: const EdgeInsets.all(14),
+                      child: Row(children: [
+                        Expanded(
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text(item.description, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary)),
+                            Text('${item.quantity} × ₦${item.unitPrice.toStringAsFixed(2)} · VAT ${(vatRateToPercent(item.vatRate) * 100).toStringAsFixed(1)}%',
+                                style: AppTextStyles.labelMedium.copyWith(color: AppColors.textSecondary)),
+                          ]),
+                        ),
+                        Text('₦${item.lineTotalWithVat.toStringAsFixed(2)}', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary)),
+                      ]),
+                    ),
                   )),
               const Gap(12),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+              SoftCard(
+                radius: 20,
+                padding: const EdgeInsets.all(18),
                 child: Column(children: [
                   _totalRow('Subtotal', invoice.subtotal),
                   _totalRow('Total VAT', invoice.totalVat),
@@ -125,10 +143,9 @@ class InvoiceDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _card(String label, String name, String tin, String address) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+  Widget _card(String label, String name, String tin, String address) => SoftCard(
+        radius: 20,
+        padding: const EdgeInsets.all(18),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(label, style: AppTextStyles.labelMedium.copyWith(color: AppColors.textSecondary)),
           const Gap(4),

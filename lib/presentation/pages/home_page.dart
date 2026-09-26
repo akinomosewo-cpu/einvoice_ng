@@ -70,7 +70,7 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
                 SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       if (!state.profile.isComplete)
@@ -78,7 +78,7 @@ class _HomePageState extends State<HomePage> {
                           context,
                           MaterialPageRoute(builder: (_) => const BusinessProfilePage()),
                         )),
-                      const Gap(8),
+                      const Gap(12),
                       Row(children: [
                         _StatCard(label: 'Invoices', value: state.invoices.length.toString(), color: AppColors.primary)
                             .animate(delay: 50.ms)
@@ -95,7 +95,7 @@ class _HomePageState extends State<HomePage> {
                             .fadeIn()
                             .slideY(begin: 0.1),
                       ]),
-                      const Gap(24),
+                      const Gap(28),
                       Text('Manage', style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary)),
                       const Gap(12),
                       _FeatureCard(
@@ -122,13 +122,18 @@ class _HomePageState extends State<HomePage> {
                       Text('Invoice History', style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary)),
                       const Gap(12),
                       if (state.invoices.isEmpty)
-                        Container(
+                        SoftCard(
+                          radius: 28,
                           padding: const EdgeInsets.all(32),
-                          decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.border)),
                           child: Column(children: [
-                            const Icon(Icons.receipt_long_rounded, color: AppColors.textTertiary, size: 40),
-                            const Gap(12),
-                            Text('No invoices yet', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+                            Container(
+                              width: 72,
+                              height: 72,
+                              decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), shape: BoxShape.circle),
+                              child: const Icon(Icons.receipt_long_rounded, color: AppColors.primary, size: 34),
+                            ),
+                            const Gap(16),
+                            Text('No invoices yet', style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary)),
                             const Gap(4),
                             Text('Tap + to create your first invoice', style: AppTextStyles.labelMedium.copyWith(color: AppColors.textTertiary)),
                           ]),
@@ -177,16 +182,15 @@ class _ProfileNudge extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 12),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(20),
           child: Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.warning.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.warning.withOpacity(0.4)),
+              color: AppColors.warning.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Row(children: [
-              const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 20),
+              const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 22),
               const Gap(12),
               Expanded(
                 child: Text('Complete your business profile to start invoicing',
@@ -205,12 +209,12 @@ class _StatCard extends StatelessWidget {
   const _StatCard({required this.label, required this.value, required this.color});
   @override
   Widget build(BuildContext context) => Expanded(
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+        child: SoftCard(
+          radius: 22,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
           child: Column(children: [
-            Text(value, style: AppTextStyles.displaySmall.copyWith(color: color, fontWeight: FontWeight.w800), maxLines: 1, overflow: TextOverflow.ellipsis),
-            const Gap(2),
+            Text(value, style: AppTextStyles.headlineLarge.copyWith(color: color, fontWeight: FontWeight.w800), maxLines: 1, overflow: TextOverflow.ellipsis),
+            const Gap(4),
             Text(label, style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary), textAlign: TextAlign.center),
           ]),
         ),
@@ -226,18 +230,18 @@ class _FeatureCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
+        borderRadius: BorderRadius.circular(20),
+        child: SoftCard(
+          radius: 20,
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
           child: Row(children: [
             Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
-              child: Icon(icon, color: color, size: 16),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(14)),
+              child: Icon(icon, color: color, size: 18),
             ),
             const Gap(14),
-            Expanded(child: Text(label, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary))),
+            Expanded(child: Text(label, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w600))),
             const Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary, size: 18),
           ]),
         ),
@@ -272,16 +276,16 @@ class _InvoiceTile extends StatelessWidget {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        decoration: BoxDecoration(color: AppColors.danger.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(color: AppColors.danger.withOpacity(0.16), borderRadius: BorderRadius.circular(20)),
         child: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
       ),
       onDismissed: (_) => onDelete(),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
+        borderRadius: BorderRadius.circular(20),
+        child: SoftCard(
+          radius: 20,
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
           child: Row(children: [
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -290,11 +294,7 @@ class _InvoiceTile extends StatelessWidget {
                 Text('₦${invoice.grandTotal.toStringAsFixed(2)}', style: AppTextStyles.labelMedium.copyWith(color: AppColors.textTertiary)),
               ]),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(color: statusColor.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
-              child: Text(invoice.status.name, style: AppTextStyles.labelSmall.copyWith(color: statusColor, fontWeight: FontWeight.w700)),
-            ),
+            StatusChip(label: invoice.status.name, color: statusColor),
           ]),
         ),
       ),
